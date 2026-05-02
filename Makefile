@@ -1,4 +1,4 @@
-.PHONY: install lint format typecheck test up down migrate revision seed
+.PHONY: install lint format typecheck test up down migrate revision seed openapi
 
 install:
 	uv sync --all-packages
@@ -32,3 +32,7 @@ revision:
 
 seed:
 	@echo "available from Stage 2 (seed templates)"
+
+openapi:
+	mkdir -p docs
+	SECRET_KEY=dummy-for-export uv run --package gamehost-api python -m gamehost_api.scripts.export_openapi > docs/openapi.json

@@ -28,7 +28,9 @@ def postgres_url() -> Iterator[str]:
 
 @pytest.fixture(scope="session", autouse=True)
 def _apply_migrations(_secret_key: None, postgres_url: str) -> None:
-    env = os.environ.copy()
+    env = {k: v for k, v in os.environ.items() if not k.startswith("COV_")}
+    env.pop("COVERAGE_PROCESS_START", None)
+    env.pop("COVERAGE_FILE", None)
     env["DATABASE_URL"] = postgres_url
     env["SECRET_KEY"] = os.environ["SECRET_KEY"]
     subprocess.run(
