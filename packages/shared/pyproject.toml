@@ -3,7 +3,9 @@ name = "gamehost-shared"
 version = "0.0.0"
 description = "Shared enums, schemas, and contracts for GameHost services"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pydantic>=2.6,<3",
+]
 
 [build-system]
 requires = ["hatchling"]
