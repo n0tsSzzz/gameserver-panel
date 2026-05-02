@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from gamehost_api.core.security import decode_access_token
 from gamehost_api.db.models import User
+from gamehost_api.domain.exceptions import Forbidden
 from gamehost_api.repositories.users import UserRepository
 
 
@@ -35,4 +36,10 @@ async def get_current_user(
     user = await UserRepository(session).get(uuid.UUID(claims["sub"]))
     if user is None or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="user_inactive")
+    return user
+
+
+async def require_admin(user: User = Depends(get_current_user)) -> User:
+    if user.role != "admin":
+        raise Forbidden()
     return user

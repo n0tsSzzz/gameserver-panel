@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     argon2_time_cost: int = Field(default=3, alias="ARGON2_TIME_COST")
     argon2_parallelism: int = Field(default=4, alias="ARGON2_PARALLELISM")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    bootstrap_admin_email: str | None = Field(default=None, alias="BOOTSTRAP_ADMIN_EMAIL")
+    bootstrap_admin_password: SecretStr | None = Field(
+        default=None, alias="BOOTSTRAP_ADMIN_PASSWORD"
+    )
 
 
 @lru_cache(maxsize=1)
