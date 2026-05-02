@@ -1,4 +1,4 @@
-.PHONY: install lint format typecheck test up down migrate revision seed
+.PHONY: install lint format typecheck test up down migrate revision seed openapi
 
 install:
 	uv sync --all-packages
@@ -25,10 +25,14 @@ down:
 	docker compose -f deploy/docker-compose.yml down
 
 migrate:
-	@echo "available from Stage 1 (alembic upgrade head)"
+	set -a && . ./.env && set +a && cd apps/api && uv run alembic upgrade head
 
 revision:
-	@echo "available from Stage 1 (alembic revision --autogenerate)"
+	set -a && . ./.env && set +a && cd apps/api && uv run alembic revision --autogenerate -m "$(m)"
 
 seed:
 	@echo "available from Stage 2 (seed templates)"
+
+openapi:
+	mkdir -p docs
+	SECRET_KEY=dummy-for-export uv run --package gamehost-api python -m gamehost_api.scripts.export_openapi > docs/openapi.json

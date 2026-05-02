@@ -53,10 +53,40 @@ curl localhost:8000/healthz   # {"status":"ok"}
 curl localhost:8000/readyz    # {"status":"ready"} если Postgres доступен
 ```
 
+## Auth (Stage 1)
+
+```bash
+# 1. register
+curl -X POST localhost:8000/api/v1/auth/register \
+  -H 'content-type: application/json' \
+  -d '{"email":"a@b.test","password":"hunter22hunter22"}'
+
+# 2. login (saves refresh cookie to c.txt)
+curl -c c.txt -X POST localhost:8000/api/v1/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"email":"a@b.test","password":"hunter22hunter22"}'
+
+# 3. authenticated request
+ACCESS=$(curl -s -c c.txt -X POST localhost:8000/api/v1/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"email":"a@b.test","password":"hunter22hunter22"}' | jq -r .accessToken)
+curl localhost:8000/api/v1/auth/me -H "authorization: Bearer $ACCESS"
+
+# 4. rotate refresh
+curl -b c.txt -c c.txt -X POST localhost:8000/api/v1/auth/refresh
+
+# 5. logout
+curl -b c.txt -X POST localhost:8000/api/v1/auth/logout
+```
+
+Errors are RFC 7807 (`application/problem+json`), e.g. `{"type":"about:blank","title":"Invalid credentials","status":401,"code":"invalid_credentials"}`.
+
+OpenAPI — `make openapi` записывает спецификацию в `docs/openapi.json`.
+
 ## Этапы реализации
 
-См. `claude_code_prompt.md` (§9). Текущий план — `~/.claude/plans/users-maalord-gameserver-panel-claude-c-elegant-rose.md`.
-После Этапа 0 — отдельный цикл brainstorm для Этапа 1 (auth + users).
+См. `claude_code_prompt.md` (§9). Spec и план Stage 1 — в `docs/superpowers/`.
+После Stage 1 — отдельный цикл brainstorm для Stage 2 (templates + nodes admin).
 
 ## Troubleshooting
 

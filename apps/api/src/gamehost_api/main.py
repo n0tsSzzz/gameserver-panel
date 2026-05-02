@@ -2,17 +2,24 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Response, status
+from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine
 
+from gamehost_api.api.v1 import api_v1
 from gamehost_api.core.config import get_settings
+from gamehost_api.core.errors import register_exception_handlers
+from gamehost_api.core.logging import configure_logging
+from gamehost_api.core.request_id import RequestIDMiddleware
+from gamehost_api.db.session import make_engine, make_sessionmaker
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    settings = get_settings()
-    engine: AsyncEngine = create_async_engine(settings.database_url, pool_pre_ping=True)
+    configure_logging(get_settings().log_level)
+    engine: AsyncEngine = make_engine()
     app.state.engine = engine
+    app.state.sessionmaker = make_sessionmaker(engine)
     try:
         yield
     finally:
@@ -20,6 +27,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="GameHost API", version="0.0.0", lifespan=lifespan)
+app.add_middleware(RequestIDMiddleware)
+register_exception_handlers(app)
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+app.include_router(api_v1)
 
 
 @app.get("/healthz")

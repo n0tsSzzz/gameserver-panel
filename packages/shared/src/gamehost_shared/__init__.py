@@ -1,3 +1,3 @@
-from gamehost_shared.enums import NodeStatus, ServerStatus
+from gamehost_shared.enums import NodeStatus, ServerStatus, UserRole
 
-__all__ = ["NodeStatus", "ServerStatus"]
+__all__ = ["NodeStatus", "ServerStatus", "UserRole"]
