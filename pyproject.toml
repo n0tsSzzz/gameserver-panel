@@ -39,17 +39,18 @@ select = ["E", "F", "I", "UP", "B", "SIM", "N", "ASYNC", "RUF"]
 "**/tests/**" = ["B", "SIM"]
 "**/domain/exceptions.py" = ["N818"]
 "**/api/**" = ["B008"]
+"**/tests/factories.py" = ["B"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-mypy_path = ["apps/api/src", "packages/shared/src"]
+mypy_path = ["apps/api/src", "apps/api", "packages/shared/src"]
 explicit_package_bases = true
 namespace_packages = true
 
 [[tool.mypy.overrides]]
-module = ["testcontainers.*"]
+module = ["testcontainers.*", "email_validator"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
