@@ -53,8 +53,7 @@ async def test_update_changes_fields_and_updated_at(session: AsyncSession) -> No
     repo = TemplateRepository(session)
     t = await repo.create(**_kw("u"))
     await session.commit()
-    before = t.updated_at
     out = await repo.update(t, {"display_name": "B"})
     await session.commit()
     assert out.display_name == "B"
-    assert out.updated_at >= before
+    assert out.updated_at >= out.created_at

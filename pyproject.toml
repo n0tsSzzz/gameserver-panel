@@ -8,7 +8,7 @@ requires-python = ">=3.12"
 package = false
 
 [tool.uv.workspace]
-members = ["apps/api", "packages/shared"]
+members = ["apps/api", "apps/node_agent", "packages/shared"]
 
 [tool.uv.sources]
 gamehost-shared = { workspace = true }
@@ -25,12 +25,13 @@ dev = [
     "pytest-cov>=5,<7",
     "polyfactory>=2.18,<3",
     "types-python-jose>=3.3,<4",
+    "types-requests>=2.32,<3",
 ]
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-src = ["apps/api/src", "packages/shared/src"]
+src = ["apps/api/src", "apps/node_agent/src", "packages/shared/src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "N", "ASYNC", "RUF"]
@@ -45,22 +46,29 @@ select = ["E", "F", "I", "UP", "B", "SIM", "N", "ASYNC", "RUF"]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-mypy_path = ["apps/api/src", "apps/api", "packages/shared/src"]
+mypy_path = ["apps/api/src", "apps/api", "apps/node_agent/src", "packages/shared/src"]
 explicit_package_bases = true
 namespace_packages = true
 
 [[tool.mypy.overrides]]
-module = ["testcontainers.*", "email_validator"]
+module = ["testcontainers.*", "email_validator", "docker", "docker.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["tests.conftest"]
+disable_error_code = ["no-redef"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["apps/api/tests"]
-addopts = "-ra --strict-markers --cov --cov-report=term-missing --cov-fail-under=70"
+testpaths = ["apps/api/tests", "apps/node_agent/tests"]
+addopts = "-ra --strict-markers --cov --cov-report=term-missing --cov-fail-under=70 -m 'not docker_real'"
+markers = [
+    "docker_real: requires a real Docker daemon; skipped by default",
+]
 
 [tool.coverage.run]
 branch = true
-source = ["apps/api/src/gamehost_api"]
+source = ["apps/api/src/gamehost_api", "apps/node_agent/src/gamehost_node"]
 
 [tool.coverage.report]
 show_missing = true

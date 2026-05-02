@@ -53,6 +53,37 @@ curl localhost:8000/healthz   # {"status":"ok"}
 curl localhost:8000/readyz    # {"status":"ready"} если Postgres доступен
 ```
 
+## Stage 3: node-agent
+
+Отдельный сервис, живущий на каждой ноде. Принимает команды от worker'а
+(будет на Stage 4) и проксирует в локальный Docker daemon.
+
+```bash
+# 1. собрать образ
+make build-node-agent
+
+# 2. запустить с монтированным docker.sock
+docker run -d --name gh-node \
+  -p 8080:8080 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -e NODE_AGENT_API_KEY=test123 \
+  gamehost-node:dev
+
+# 3. проверить
+curl localhost:8080/healthz
+curl -X POST localhost:8080/api/v1/containers \
+  -H 'authorization: Bearer test123' -H 'content-type: application/json' \
+  -d '{"name":"smoke","image":"busybox:latest","resources":{"cpuCores":0.5,"memMb":64}}'
+```
+
+Все эндпоинты под `/api/v1/containers/*` требуют Bearer-токен (`NODE_AGENT_API_KEY`).
+SSE-логи: `GET /api/v1/containers/{id}/logs/stream` (`text/event-stream`).
+Контейнеры стартуют с `cap_drop=ALL`, `no-new-privileges`, лимитами CPU/mem,
+`read_only` rootfs (опционально).
+
+Real-Docker smoke-тест: `pytest -m docker_real apps/node_agent/tests` (требует
+запущенный Docker daemon локально; в обычный `make test` не входит).
+
 ## Stage 2: templates & nodes (admin)
 
 ```bash

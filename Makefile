@@ -1,4 +1,4 @@
-.PHONY: install lint format typecheck test up down migrate revision seed seed-admin seed-templates openapi
+.PHONY: install lint format typecheck test up down migrate revision seed seed-admin seed-templates openapi build-node-agent
 
 install:
 	uv sync --all-packages
@@ -41,3 +41,6 @@ seed-templates:
 openapi:
 	mkdir -p docs
 	SECRET_KEY=dummy-for-export uv run --package gamehost-api python -m gamehost_api.scripts.export_openapi > docs/openapi.json
+
+build-node-agent:
+	docker build -f apps/node_agent/Dockerfile -t gamehost-node:dev .
