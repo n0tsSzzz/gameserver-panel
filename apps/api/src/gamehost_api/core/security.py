@@ -1,3 +1,5 @@
+import hashlib
+import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -54,3 +56,11 @@ def decode_access_token(token: str) -> dict[str, Any]:
     if claims.get("type") != "access":
         raise ValueError("wrong_token_type")
     return claims
+
+
+def generate_refresh_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def hash_refresh_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
