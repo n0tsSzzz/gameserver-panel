@@ -25,10 +25,10 @@ down:
 	docker compose -f deploy/docker-compose.yml down
 
 migrate:
-	@echo "available from Stage 1 (alembic upgrade head)"
+	set -a && . ./.env && set +a && cd apps/api && uv run alembic upgrade head
 
 revision:
-	@echo "available from Stage 1 (alembic revision --autogenerate)"
+	set -a && . ./.env && set +a && cd apps/api && uv run alembic revision --autogenerate -m "$(m)"
 
 seed:
 	@echo "available from Stage 2 (seed templates)"
