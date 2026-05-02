@@ -5,6 +5,7 @@ Revises:
 Create Date: 2026-05-02
 
 """
+
 from collections.abc import Sequence
 
 import sqlalchemy as sa
@@ -53,9 +54,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.UniqueConstraint("token_hash", name="uq_refresh_tokens_token_hash"),
     )
-    op.create_index(
-        "ix_refresh_tokens_user_revoked", "refresh_tokens", ["user_id", "revoked_at"]
-    )
+    op.create_index("ix_refresh_tokens_user_revoked", "refresh_tokens", ["user_id", "revoked_at"])
 
 
 def downgrade() -> None:
