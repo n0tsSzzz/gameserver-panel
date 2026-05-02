@@ -53,6 +53,28 @@ curl localhost:8000/healthz   # {"status":"ok"}
 curl localhost:8000/readyz    # {"status":"ready"} если Postgres доступен
 ```
 
+## Stage 2: templates & nodes (admin)
+
+```bash
+# 1. bootstrap admin (reads BOOTSTRAP_ADMIN_* from .env) + 5 canonical templates
+make seed
+
+# 2. login as admin
+ACCESS=$(curl -s -X POST localhost:8000/api/v1/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"email":"admin@gh.local","password":"change-me-in-prod"}' | jq -r .accessToken)
+
+# 3. list templates (admin sees all, user sees only is_public=true)
+curl localhost:8000/api/v1/templates -H "authorization: Bearer $ACCESS"
+
+# 4. create node (apiKey is returned exactly once)
+curl -X POST localhost:8000/api/v1/nodes \
+  -H "authorization: Bearer $ACCESS" -H 'content-type: application/json' \
+  -d '{"name":"node-1","endpointUrl":"http://node-1:8080","capacityCpu":"8.00","capacityMemMb":16384}'
+```
+
+`make seed` is idempotent: existing admins stay admins, existing templates are not overwritten by the seeder. Templates can be edited via `PATCH /api/v1/templates/{id}`; to retire one, set `isPublic=false`.
+
 ## Auth (Stage 1)
 
 ```bash

@@ -53,7 +53,9 @@ def _override_db_url(monkeypatch: pytest.MonkeyPatch, postgres_url: str) -> None
 async def _clean_db(postgres_url: str) -> AsyncIterator[None]:
     engine = create_async_engine(postgres_url)
     async with engine.begin() as conn:
-        await conn.execute(text("TRUNCATE refresh_tokens, users RESTART IDENTITY CASCADE"))
+        await conn.execute(
+            text("TRUNCATE refresh_tokens, nodes, game_templates, users RESTART IDENTITY CASCADE")
+        )
     await engine.dispose()
     yield
 

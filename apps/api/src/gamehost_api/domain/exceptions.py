@@ -30,3 +30,33 @@ class UserInactive(DomainError):
     code = "user_inactive"
     status_code = 401
     title = "User is inactive"
+
+
+class Forbidden(DomainError):
+    code = "forbidden"
+    status_code = 403
+    title = "Forbidden"
+
+
+class TemplateNotFound(DomainError):
+    code = "template_not_found"
+    status_code = 404
+    title = "Game template not found"
+
+
+class SlugAlreadyTaken(DomainError):
+    code = "slug_taken"
+    status_code = 409
+    title = "Template slug already taken"
+
+
+class NodeNotFound(DomainError):
+    code = "node_not_found"
+    status_code = 404
+    title = "Node not found"
+
+
+class NodeNameTaken(DomainError):
+    code = "node_name_taken"
+    status_code = 409
+    title = "Node name already taken"
