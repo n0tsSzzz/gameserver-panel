@@ -1,4 +1,4 @@
-.PHONY: install lint format typecheck test up down migrate revision seed openapi
+.PHONY: install lint format typecheck test up down migrate revision seed seed-admin seed-templates openapi
 
 install:
 	uv sync --all-packages
@@ -30,8 +30,13 @@ migrate:
 revision:
 	set -a && . ./.env && set +a && cd apps/api && uv run alembic revision --autogenerate -m "$(m)"
 
-seed:
-	@echo "available from Stage 2 (seed templates)"
+seed: seed-admin seed-templates
+
+seed-admin:
+	set -a && . ./.env && set +a && cd apps/api && uv run python -m gamehost_api.scripts.seed_admin
+
+seed-templates:
+	set -a && . ./.env && set +a && cd apps/api && uv run python -m gamehost_api.scripts.seed_templates
 
 openapi:
 	mkdir -p docs
