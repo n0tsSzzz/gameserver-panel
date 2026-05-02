@@ -1,6 +1,11 @@
 from enum import StrEnum
 
 
+class UserRole(StrEnum):
+    USER = "user"
+    ADMIN = "admin"
+
+
 class ServerStatus(StrEnum):
     PENDING = "pending"
     PROVISIONING = "provisioning"
