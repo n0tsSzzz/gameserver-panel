@@ -28,7 +28,7 @@ class NodeRepository:
         *,
         name: str,
         endpoint_url: str,
-        api_key_hash: str,
+        api_key: str,
         capacity_cpu: Decimal,
         capacity_mem_mb: int,
     ) -> Node:
@@ -36,7 +36,7 @@ class NodeRepository:
             id=uuid.uuid4(),
             name=name,
             endpoint_url=endpoint_url,
-            api_key_hash=api_key_hash,
+            api_key=api_key,
             capacity_cpu=capacity_cpu,
             capacity_mem_mb=capacity_mem_mb,
         )

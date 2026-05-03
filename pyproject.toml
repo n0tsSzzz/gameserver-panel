@@ -8,10 +8,11 @@ requires-python = ">=3.12"
 package = false
 
 [tool.uv.workspace]
-members = ["apps/api", "apps/node_agent", "packages/shared"]
+members = ["apps/api", "apps/node_agent", "apps/worker", "packages/shared"]
 
 [tool.uv.sources]
 gamehost-shared = { workspace = true }
+gamehost-api = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -26,12 +27,13 @@ dev = [
     "polyfactory>=2.18,<3",
     "types-python-jose>=3.3,<4",
     "types-requests>=2.32,<3",
+    "respx>=0.21,<1",
 ]
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-src = ["apps/api/src", "apps/node_agent/src", "packages/shared/src"]
+src = ["apps/api/src", "apps/node_agent/src", "apps/worker/src", "packages/shared/src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "N", "ASYNC", "RUF"]
@@ -41,12 +43,20 @@ select = ["E", "F", "I", "UP", "B", "SIM", "N", "ASYNC", "RUF"]
 "**/domain/exceptions.py" = ["N818"]
 "**/api/**" = ["B008"]
 "**/tests/factories.py" = ["B"]
+"**/clients/node_agent_client.py" = ["N818"]
+"**/gamehost_worker/main.py" = ["RUF012"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-mypy_path = ["apps/api/src", "apps/api", "apps/node_agent/src", "packages/shared/src"]
+mypy_path = [
+    "apps/api/src",
+    "apps/api",
+    "apps/node_agent/src",
+    "apps/worker/src",
+    "packages/shared/src",
+]
 explicit_package_bases = true
 namespace_packages = true
 
@@ -60,7 +70,7 @@ disable_error_code = ["no-redef"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["apps/api/tests", "apps/node_agent/tests"]
+testpaths = ["apps/api/tests", "apps/node_agent/tests", "apps/worker/tests"]
 addopts = "-ra --strict-markers --cov --cov-report=term-missing --cov-fail-under=70 -m 'not docker_real'"
 markers = [
     "docker_real: requires a real Docker daemon; skipped by default",
@@ -68,7 +78,11 @@ markers = [
 
 [tool.coverage.run]
 branch = true
-source = ["apps/api/src/gamehost_api", "apps/node_agent/src/gamehost_node"]
+source = [
+    "apps/api/src/gamehost_api",
+    "apps/node_agent/src/gamehost_node",
+    "apps/worker/src/gamehost_worker",
+]
 
 [tool.coverage.report]
 show_missing = true

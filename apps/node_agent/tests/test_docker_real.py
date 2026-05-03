@@ -3,7 +3,8 @@ import asyncio
 import pytest
 
 from gamehost_node.docker_facade import DockerFacade
-from gamehost_node.schemas.containers import CreateContainerIn, Resources
+from gamehost_node.schemas.containers import CreateContainerIn
+from gamehost_shared.resources import Resources
 
 
 @pytest.mark.docker_real

@@ -4,15 +4,10 @@ import uuid
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from gamehost_api.core.security import hash_password, verify_password
 from gamehost_api.db.models import Node
 from gamehost_api.domain.exceptions import NodeNameTaken, NodeNotFound
 from gamehost_api.repositories.nodes import NodeRepository
 from gamehost_api.schemas.nodes import NodeCreateIn, NodePatchIn
-
-
-def verify_api_key(plain: str, node: Node) -> bool:
-    return verify_password(node.api_key_hash, plain)
 
 
 class NodeService:
@@ -31,7 +26,7 @@ class NodeService:
             node = await self._repo.create(
                 name=payload.name,
                 endpoint_url=str(payload.endpoint_url),
-                api_key_hash=hash_password(plain),
+                api_key=plain,
                 capacity_cpu=payload.capacity_cpu,
                 capacity_mem_mb=payload.capacity_mem_mb,
             )

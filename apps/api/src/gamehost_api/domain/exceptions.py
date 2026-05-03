@@ -60,3 +60,27 @@ class NodeNameTaken(DomainError):
     code = "node_name_taken"
     status_code = 409
     title = "Node name already taken"
+
+
+class ServerNotFound(DomainError):
+    code = "server_not_found"
+    status_code = 404
+    title = "Server not found"
+
+
+class NoCapacity(DomainError):
+    code = "no_capacity"
+    status_code = 409
+    title = "No node has capacity for the requested resources"
+
+
+class InvalidServerState(DomainError):
+    code = "invalid_server_state"
+    status_code = 409
+    title = "Server is in an invalid state for this operation"
+
+
+class TaskNotFound(DomainError):
+    code = "task_not_found"
+    status_code = 404
+    title = "Task not found"

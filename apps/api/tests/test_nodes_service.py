@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from gamehost_api.core.config import get_settings
 from gamehost_api.domain.exceptions import NodeNameTaken, NodeNotFound
-from gamehost_api.domain.nodes import NodeService, verify_api_key
+from gamehost_api.domain.nodes import NodeService
 from gamehost_api.schemas.nodes import NodeCreateIn, NodePatchIn
 
 
@@ -32,14 +32,12 @@ def _payload(name: str = "node-a") -> NodeCreateIn:
     )
 
 
-async def test_create_returns_plaintext_api_key_and_hashes_it(session: AsyncSession) -> None:
+async def test_create_returns_plaintext_api_key_stored_as_is(session: AsyncSession) -> None:
     svc = NodeService(session)
     node, plain = await svc.create(_payload())
     await session.commit()
     assert isinstance(plain, str) and len(plain) >= 32
-    assert node.api_key_hash != plain
-    assert verify_api_key(plain, node) is True
-    assert verify_api_key("wrong-key", node) is False
+    assert node.api_key == plain
 
 
 async def test_create_duplicate_name_raises(session: AsyncSession) -> None:

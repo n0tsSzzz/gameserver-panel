@@ -22,7 +22,7 @@ async def test_create_get_list(session: AsyncSession) -> None:
     n = await repo.create(
         name="n1",
         endpoint_url="http://n1:8080",
-        api_key_hash="h",
+        api_key="h",
         capacity_cpu=Decimal("8.00"),
         capacity_mem_mb=16384,
     )
@@ -38,7 +38,7 @@ async def test_update_and_delete(session: AsyncSession) -> None:
     n = await repo.create(
         name="n2",
         endpoint_url="http://n2:8080",
-        api_key_hash="h",
+        api_key="h",
         capacity_cpu=Decimal("4.00"),
         capacity_mem_mb=8192,
     )

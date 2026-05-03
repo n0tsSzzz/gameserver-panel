@@ -1,6 +1,17 @@
+from gamehost_api.db.models.audit_log import AuditLog
 from gamehost_api.db.models.game_template import GameTemplate
 from gamehost_api.db.models.node import Node
 from gamehost_api.db.models.refresh_token import RefreshToken
+from gamehost_api.db.models.server import Server
+from gamehost_api.db.models.task import Task
 from gamehost_api.db.models.user import User
 
-__all__ = ["GameTemplate", "Node", "RefreshToken", "User"]
+__all__ = [
+    "AuditLog",
+    "GameTemplate",
+    "Node",
+    "RefreshToken",
+    "Server",
+    "Task",
+    "User",
+]

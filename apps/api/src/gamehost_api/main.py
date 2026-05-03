@@ -12,17 +12,27 @@ from gamehost_api.core.errors import register_exception_handlers
 from gamehost_api.core.logging import configure_logging
 from gamehost_api.core.request_id import RequestIDMiddleware
 from gamehost_api.db.session import make_engine, make_sessionmaker
+from gamehost_api.tasks.arq_pool import create_arq_pool
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    configure_logging(get_settings().log_level)
+    settings = get_settings()
+    configure_logging(settings.log_level)
     engine: AsyncEngine = make_engine()
     app.state.engine = engine
     app.state.sessionmaker = make_sessionmaker(engine)
+    if not hasattr(app.state, "arq_pool"):
+        app.state.arq_pool = await create_arq_pool(settings.redis_url)
     try:
         yield
     finally:
+        import contextlib
+
+        close = getattr(app.state.arq_pool, "close", None)
+        if callable(close):
+            with contextlib.suppress(Exception):
+                close()
         await engine.dispose()
 
 
