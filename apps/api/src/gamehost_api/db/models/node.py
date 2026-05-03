@@ -18,7 +18,7 @@ class Node(Base, TimestampMixin):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     endpoint_url: Mapped[str] = mapped_column(String, nullable=False)
-    api_key_hash: Mapped[str] = mapped_column(String, nullable=False)
+    api_key: Mapped[str] = mapped_column(String, nullable=False)
     capacity_cpu: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
     capacity_mem_mb: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String, nullable=False, server_default="online")

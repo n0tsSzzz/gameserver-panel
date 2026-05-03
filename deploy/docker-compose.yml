@@ -50,6 +50,22 @@ services:
       retries: 10
     networks: [gamehost]
 
+  worker:
+    build:
+      context: ..
+      dockerfile: apps/worker/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-gamehost}:${POSTGRES_PASSWORD:-gamehost}@postgres:5432/${POSTGRES_DB:-gamehost}
+      REDIS_URL: redis://redis:6379
+      NODE_AGENT_TIMEOUT_S: "10.0"
+      LOG_LEVEL: INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [gamehost]
+
 volumes:
   pgdata:
   redisdata:

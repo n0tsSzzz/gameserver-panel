@@ -4,11 +4,12 @@ from typing import Literal
 from pydantic import Field
 
 from gamehost_shared.camel_model import CamelModel
+from gamehost_shared.resources import Resources
 
 
 class PortBinding(CamelModel):
     container_port: int = Field(gt=0, le=65535)
-    host_port: int = Field(gt=0, le=65535)
+    host_port: int = Field(ge=0, le=65535)
     protocol: Literal["tcp", "udp"] = "tcp"
 
 
@@ -16,11 +17,6 @@ class VolumeMount(CamelModel):
     name: str = Field(min_length=1, max_length=200)
     mount_path: str = Field(min_length=1, max_length=500)
     read_only: bool = False
-
-
-class Resources(CamelModel):
-    cpu_cores: float = Field(gt=0, le=128)
-    mem_mb: int = Field(gt=0, le=1_000_000)
 
 
 class CreateContainerIn(CamelModel):

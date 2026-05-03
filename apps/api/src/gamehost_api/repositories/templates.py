@@ -1,8 +1,7 @@
 import uuid
-from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from gamehost_api.db.models import GameTemplate
@@ -55,6 +54,7 @@ class TemplateRepository:
     async def update(self, t: GameTemplate, fields: dict[str, Any]) -> GameTemplate:
         for k, v in fields.items():
             setattr(t, k, v)
-        t.updated_at = datetime.now(UTC)
+        t.updated_at = func.now()
         await self._s.flush()
+        await self._s.refresh(t, ["updated_at"])
         return t

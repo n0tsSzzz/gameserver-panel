@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     bootstrap_admin_password: SecretStr | None = Field(
         default=None, alias="BOOTSTRAP_ADMIN_PASSWORD"
     )
+    redis_url: str = Field(default="redis://localhost:6379", alias="REDIS_URL")
+    node_agent_timeout_s: float = Field(default=10.0, alias="NODE_AGENT_TIMEOUT_S")
 
 
 @lru_cache(maxsize=1)

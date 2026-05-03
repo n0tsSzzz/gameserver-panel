@@ -19,3 +19,18 @@ class NodeStatus(StrEnum):
     ONLINE = "online"
     OFFLINE = "offline"
     DRAIN = "drain"
+
+
+class TaskKind(StrEnum):
+    PROVISION = "provision"
+    START = "start"
+    STOP = "stop"
+    RESTART = "restart"
+    DELETE = "delete"
+
+
+class TaskStatus(StrEnum):
+    PENDING = "pending"
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"

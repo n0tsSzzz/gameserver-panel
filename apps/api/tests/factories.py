@@ -71,7 +71,7 @@ async def make_node(
     *,
     name: str,
     endpoint_url: str = "http://node:8080",
-    api_key_hash: str = "x",
+    api_key: str = "x",
     capacity_cpu: float = 4.0,
     capacity_mem_mb: int = 8192,
 ) -> Node:
@@ -79,7 +79,7 @@ async def make_node(
     n = await repo.create(
         name=name,
         endpoint_url=endpoint_url,
-        api_key_hash=api_key_hash,
+        api_key=api_key,
         capacity_cpu=Decimal(str(capacity_cpu)),
         capacity_mem_mb=capacity_mem_mb,
     )

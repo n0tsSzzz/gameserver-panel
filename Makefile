@@ -1,4 +1,4 @@
-.PHONY: install lint format typecheck test up down migrate revision seed seed-admin seed-templates openapi build-node-agent
+.PHONY: install lint format typecheck test up down migrate revision seed seed-admin seed-templates openapi build-node-agent build-worker
 
 install:
 	uv sync --all-packages
@@ -44,3 +44,6 @@ openapi:
 
 build-node-agent:
 	docker build -f apps/node_agent/Dockerfile -t gamehost-node:dev .
+
+build-worker:
+	docker build -f apps/worker/Dockerfile -t gamehost-worker:dev .

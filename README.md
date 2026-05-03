@@ -53,6 +53,38 @@ curl localhost:8000/healthz   # {"status":"ok"}
 curl localhost:8000/readyz    # {"status":"ready"} если Postgres доступен
 ```
 
+## Stage 4: full server lifecycle
+
+End-to-end provisioning loop is live. API ставит ARQ-задачу → worker
+выбирает наименее загруженную ноду → зовёт node-agent → Docker запускает
+контейнер. Сервер получает `host:port` для подключения.
+
+```bash
+# 1. инфра
+make up && make migrate && make seed
+
+# 2. node-agent (Stage 3) с ключом
+docker run -d --name gh-node -p 8080:8080 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -e NODE_AGENT_API_KEY=test-node-key gamehost-node:dev
+
+# 3. worker
+make build-worker
+docker run -d --name gh-worker --network gamehost_gamehost \
+  -e DATABASE_URL=postgresql+asyncpg://gamehost:gamehost@postgres:5432/gamehost \
+  -e REDIS_URL=redis://redis:6379 gamehost-worker:dev
+# или локально: cd apps/worker && uv run arq gamehost_worker.main.WorkerSettings
+
+# 4. login admin → POST /api/v1/nodes c endpoint и тем же ключом
+# 5. POST /api/v1/servers {"name":"mc","templateId":"<uuid>"} → 202 + taskId
+# 6. polling GET /api/v1/tasks/{taskId} → succeeded
+# 7. GET /api/v1/servers/{id} → status=running, host+port заполнены
+```
+
+`make build-worker` — сборка образа worker'а. Stage 4 включает миграцию `0003`,
+которая меняет `nodes.api_key_hash` на plaintext `nodes.api_key` (controller
+теперь умеет говорить с node-agent'ом, читая ключ из БД).
+
 ## Stage 3: node-agent
 
 Отдельный сервис, живущий на каждой ноде. Принимает команды от worker'а
