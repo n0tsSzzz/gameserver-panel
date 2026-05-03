@@ -57,14 +57,25 @@ def mock_facade() -> MagicMock:
             yield line
 
     f.stream_logs = MagicMock(return_value=_empty_stream())
+    f.tail_logs = AsyncMock(return_value=["hello", "world"])
     return f
 
 
+@pytest.fixture
+def mock_publisher() -> MagicMock:
+    p = MagicMock()
+    p.start = AsyncMock(return_value=None)
+    p.stop = AsyncMock(return_value=None)
+    p.shutdown = AsyncMock(return_value=None)
+    return p
+
+
 @pytest_asyncio.fixture
-async def client(mock_facade: MagicMock) -> AsyncIterator[AsyncClient]:
+async def client(mock_facade: MagicMock, mock_publisher: MagicMock) -> AsyncIterator[AsyncClient]:
     from gamehost_node.main import app
 
     app.state.docker_facade = mock_facade
+    app.state.log_publisher = mock_publisher
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
         async with app.router.lifespan_context(app):
             yield c

@@ -1,4 +1,3 @@
-from collections.abc import AsyncIterator
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -93,23 +92,17 @@ async def test_connection_error_maps_to_503(
     assert r.json()["code"] == "docker_unavailable"
 
 
-async def test_logs_stream_returns_event_stream(
-    client: AsyncClient, auth_headers: dict[str, str], mock_facade: MagicMock
+async def test_get_logs_tail_returns_lines(
+    client: AsyncClient, auth_headers: dict[str, str]
 ) -> None:
-    async def _stream() -> AsyncIterator[str]:
-        yield "first line\n"
-        yield "second line\n"
+    r = await client.get("/api/v1/containers/abc123/logs?tail=20", headers=auth_headers)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["lines"] == ["hello", "world"]
 
-    mock_facade.stream_logs = MagicMock(return_value=_stream())
-    async with client.stream(
-        "GET", "/api/v1/containers/abc123/logs/stream", headers=auth_headers
-    ) as r:
-        assert r.status_code == 200
-        assert r.headers["content-type"].startswith("text/event-stream")
-        body = b""
-        async for chunk in r.aiter_bytes():
-            body += chunk
-            if b"second line" in body:
-                break
-    assert b"data: first line" in body
-    assert b"data: second line" in body
+
+async def test_get_logs_tail_invalid_returns_422(
+    client: AsyncClient, auth_headers: dict[str, str]
+) -> None:
+    r = await client.get("/api/v1/containers/abc123/logs?tail=0", headers=auth_headers)
+    assert r.status_code == 422

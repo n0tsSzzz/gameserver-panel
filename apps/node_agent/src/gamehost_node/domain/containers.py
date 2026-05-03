@@ -9,6 +9,7 @@ from gamehost_node.domain.exceptions import (
     ContainerNotFound,
     DockerUnavailable,
 )
+from gamehost_node.log_publisher import LogPublisher
 from gamehost_node.schemas.containers import (
     ContainerDetailOut,
     ContainerOut,
@@ -17,17 +18,29 @@ from gamehost_node.schemas.containers import (
 
 
 class ContainerService:
-    def __init__(self, facade: DockerFacade) -> None:
+    def __init__(self, facade: DockerFacade, publisher: LogPublisher | None = None) -> None:
         self._f = facade
+        self._publisher = publisher
 
     async def create(self, payload: CreateContainerIn) -> ContainerOut:
         try:
-            return await self._f.create_and_start(payload)
+            out = await self._f.create_and_start(payload)
         except docker.errors.APIError as exc:
             if exc.status_code == 409 or "is already in use" in str(exc):
                 raise ContainerNameTaken(payload.name) from exc
             raise DockerUnavailable(str(exc)) from exc
         except requests.exceptions.ConnectionError as exc:
+            raise DockerUnavailable(str(exc)) from exc
+        if self._publisher is not None:
+            await self._publisher.start(out.id)
+        return out
+
+    async def tail_logs(self, container_id: str, n: int) -> list[str]:
+        try:
+            return await self._f.tail_logs(container_id, n)
+        except docker.errors.NotFound as exc:
+            raise ContainerNotFound(container_id) from exc
+        except (docker.errors.APIError, requests.exceptions.ConnectionError) as exc:
             raise DockerUnavailable(str(exc)) from exc
 
     async def get(self, container_id: str) -> ContainerDetailOut:
@@ -68,6 +81,8 @@ class ContainerService:
             raise DockerUnavailable(str(exc)) from exc
 
     async def delete(self, container_id: str) -> None:
+        if self._publisher is not None:
+            await self._publisher.stop(container_id)
         try:
             await self._f.remove(container_id)
         except docker.errors.NotFound as exc:

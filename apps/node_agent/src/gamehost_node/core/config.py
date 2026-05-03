@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
     default_network: str | None = Field(default=None, alias="DEFAULT_NETWORK")
     listen_port: int = Field(default=8080, alias="NODE_AGENT_PORT")
+    redis_url: str = Field(default="redis://localhost:6379", alias="REDIS_URL")
 
 
 @lru_cache(maxsize=1)
