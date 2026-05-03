@@ -28,6 +28,7 @@ dev = [
     "types-python-jose>=3.3,<4",
     "types-requests>=2.32,<3",
     "respx>=0.21,<1",
+    "fakeredis>=2.26,<3",
 ]
 
 [tool.ruff]
@@ -61,7 +62,14 @@ explicit_package_bases = true
 namespace_packages = true
 
 [[tool.mypy.overrides]]
-module = ["testcontainers.*", "email_validator", "docker", "docker.*"]
+module = [
+    "testcontainers.*",
+    "email_validator",
+    "docker",
+    "docker.*",
+    "redis.*",
+    "fakeredis.*",
+]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

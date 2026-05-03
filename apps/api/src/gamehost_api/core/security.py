@@ -64,3 +64,28 @@ def generate_refresh_token() -> str:
 
 def hash_refresh_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def create_logs_stream_token(*, server_id: uuid.UUID) -> tuple[str, datetime]:
+    settings = get_settings()
+    now = datetime.now(UTC)
+    exp = now + timedelta(seconds=settings.log_stream_token_ttl_s)
+    payload: dict[str, Any] = {
+        "sub": str(server_id),
+        "type": "logs_stream",
+        "iat": int(now.timestamp()),
+        "exp": int(exp.timestamp()),
+    }
+    token = jwt.encode(payload, settings.secret_key.get_secret_value(), algorithm=_ALGORITHM)
+    return token, exp
+
+
+def decode_logs_stream_token(token: str) -> dict[str, Any]:
+    settings = get_settings()
+    try:
+        claims = jwt.decode(token, settings.secret_key.get_secret_value(), algorithms=[_ALGORITHM])
+    except JWTError as exc:
+        raise ValueError("invalid_or_expired_token") from exc
+    if claims.get("type") != "logs_stream":
+        raise ValueError("wrong_token_type")
+    return claims

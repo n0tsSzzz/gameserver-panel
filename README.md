@@ -53,6 +53,36 @@ curl localhost:8000/healthz   # {"status":"ok"}
 curl localhost:8000/readyz    # {"status":"ready"} если Postgres доступен
 ```
 
+## Stage 5: logs (tail + SSE через Redis pub/sub)
+
+Node-agent публикует строки `docker logs -f` в Redis pub/sub `logs:{cid}` для
+каждого managed-контейнера (стартует на `POST /containers`, останавливается на
+`DELETE`). API даёт два эндпоинта:
+
+```bash
+# 1. tail (последние N строк, синхронно)
+curl ".../api/v1/servers/$SID/logs?tail=200" -H "authorization: Bearer $ACCESS"
+
+# 2. SSE stream (двух-этапная авторизация)
+TOKEN=$(curl -s -X POST ".../api/v1/servers/$SID/logs/stream-token" \
+  -H "authorization: Bearer $ACCESS" | jq -r .token)
+curl -N ".../api/v1/servers/$SID/logs/stream?t=$TOKEN"
+```
+
+В JS-фронте:
+```js
+const r = await fetch(`/api/v1/servers/${sid}/logs/stream-token`, {
+  method: "POST",
+  headers: {authorization: `Bearer ${access}`},
+});
+const {token} = await r.json();
+const es = new EventSource(`/api/v1/servers/${sid}/logs/stream?t=${token}`);
+es.onmessage = e => console.log(e.data);
+```
+
+Токен — JWT TTL 60s (`LOG_STREAM_TOKEN_TTL_S`), привязан к `server_id`,
+`type=logs_stream`. EventSource не умеет заголовки — поэтому query-параметр.
+
 ## Stage 4: full server lifecycle
 
 End-to-end provisioning loop is live. API ставит ARQ-задачу → worker

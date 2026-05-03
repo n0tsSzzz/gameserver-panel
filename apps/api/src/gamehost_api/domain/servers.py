@@ -1,8 +1,19 @@
+import asyncio
 import uuid
+from collections.abc import AsyncIterator
+from datetime import datetime
+from typing import Any
 
+from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from gamehost_api.clients.node_agent_client import NodeAgentClient
+from gamehost_api.core.config import get_settings
+from gamehost_api.core.security import (
+    create_logs_stream_token,
+    decode_logs_stream_token,
+)
 from gamehost_api.db.models import Server, Task, User
 from gamehost_api.domain.exceptions import (
     InvalidServerState,
@@ -10,6 +21,7 @@ from gamehost_api.domain.exceptions import (
     TemplateNotFound,
 )
 from gamehost_api.repositories.audit_log import AuditLogRepository
+from gamehost_api.repositories.nodes import NodeRepository
 from gamehost_api.repositories.servers import ServersRepository
 from gamehost_api.repositories.tasks import TasksRepository
 from gamehost_api.repositories.templates import TemplateRepository
@@ -29,13 +41,20 @@ def _authorize(server: Server, user: User) -> None:
 
 
 class ServerService:
-    def __init__(self, session: AsyncSession, arq_pool: ArqPoolLike) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        arq_pool: ArqPoolLike,
+        redis: Any | None = None,
+    ) -> None:
         self._s = session
         self._arq = arq_pool
+        self._redis = redis
         self._servers = ServersRepository(session)
         self._tasks = TasksRepository(session)
         self._audit = AuditLogRepository(session)
         self._templates = TemplateRepository(session)
+        self._nodes = NodeRepository(session)
 
     async def list_for(self, user: User) -> list[Server]:
         if user.role == "admin":
@@ -132,3 +151,59 @@ class ServerService:
 
     async def _enqueue(self, kind: str, task_id: uuid.UUID) -> None:
         await self._arq.enqueue_job(kind, str(task_id), _job_id=str(task_id))
+
+    async def get_log_tail(self, server_id: uuid.UUID, tail: int, actor: User) -> list[str]:
+        srv = await self.get_for(server_id, actor)
+        if srv.container_id is None or srv.node_id is None:
+            return []
+        node = await self._nodes.get(srv.node_id)
+        if node is None:
+            return []
+        timeout = get_settings().node_agent_timeout_s
+        async with NodeAgentClient(node, timeout_s=timeout) as client:
+            return await client.tail_logs(srv.container_id, tail)
+
+    async def mint_log_token(self, server_id: uuid.UUID, actor: User) -> tuple[str, datetime]:
+        srv = await self.get_for(server_id, actor)
+        return create_logs_stream_token(server_id=srv.id)
+
+    async def authorize_log_stream(self, server_id: uuid.UUID, token: str) -> str:
+        try:
+            claims = decode_logs_stream_token(token)
+        except ValueError as exc:
+            raise HTTPException(status_code=401, detail=str(exc)) from exc
+        if claims["sub"] != str(server_id):
+            raise HTTPException(status_code=401, detail="token_scope_mismatch")
+        srv = await self._servers.get(server_id)
+        if srv is None or srv.container_id is None:
+            raise HTTPException(status_code=404, detail="server_not_provisioned")
+        if self._redis is None:
+            raise HTTPException(status_code=503, detail="redis_unavailable")
+        return srv.container_id
+
+    async def stream_logs_iter(self, container_id: str) -> AsyncIterator[bytes]:
+        import contextlib
+
+        if self._redis is None:
+            raise RuntimeError("redis client not configured")
+        pubsub = self._redis.pubsub()
+        await pubsub.subscribe(f"logs:{container_id}")
+        try:
+            while True:
+                msg = await pubsub.get_message(ignore_subscribe_messages=True, timeout=15.0)
+                if msg is None:
+                    yield b": ping\n\n"
+                    continue
+                if msg.get("type") != "message":
+                    continue
+                data = msg["data"]
+                if isinstance(data, bytes):
+                    data = data.decode("utf-8", errors="replace")
+                yield f"data: {data}\n\n".encode()
+        except asyncio.CancelledError:
+            raise
+        finally:
+            with contextlib.suppress(Exception):
+                await pubsub.unsubscribe()
+            with contextlib.suppress(Exception):
+                await pubsub.aclose()

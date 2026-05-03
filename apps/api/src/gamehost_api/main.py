@@ -13,6 +13,7 @@ from gamehost_api.core.logging import configure_logging
 from gamehost_api.core.request_id import RequestIDMiddleware
 from gamehost_api.db.session import make_engine, make_sessionmaker
 from gamehost_api.tasks.arq_pool import create_arq_pool
+from gamehost_api.tasks.redis_pool import create_redis_pool
 
 
 @asynccontextmanager
@@ -24,6 +25,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.sessionmaker = make_sessionmaker(engine)
     if not hasattr(app.state, "arq_pool"):
         app.state.arq_pool = await create_arq_pool(settings.redis_url)
+    if not hasattr(app.state, "redis"):
+        app.state.redis = await create_redis_pool(settings.redis_url)
     try:
         yield
     finally:
@@ -33,6 +36,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         if callable(close):
             with contextlib.suppress(Exception):
                 close()
+        redis = getattr(app.state, "redis", None)
+        if redis is not None:
+            with contextlib.suppress(Exception):
+                await redis.aclose()
         await engine.dispose()
 
 

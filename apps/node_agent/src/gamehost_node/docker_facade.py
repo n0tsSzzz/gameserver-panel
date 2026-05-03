@@ -131,6 +131,12 @@ class DockerFacade:
         snapshot = await asyncio.to_thread(c.stats, stream=False)
         return _to_stats(snapshot)
 
+    async def tail_logs(self, container_id: str, n: int) -> list[str]:
+        c = await self._get(container_id)
+        raw = await asyncio.to_thread(c.logs, tail=n, stream=False, timestamps=False)
+        decoded = raw.decode("utf-8", errors="replace") if isinstance(raw, bytes) else str(raw)
+        return [line for line in decoded.splitlines() if line]
+
     async def stream_logs(self, container_id: str) -> AsyncIterator[str]:
         c = await self._get(container_id)
         it = await asyncio.to_thread(c.logs, stream=True, follow=True, timestamps=False)

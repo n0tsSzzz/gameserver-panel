@@ -49,3 +49,7 @@ class ContainerStatsOut(CamelModel):
 
 class ContainerDetailOut(ContainerOut):
     stats: ContainerStatsOut
+
+
+class LogsTailOut(CamelModel):
+    lines: list[str]

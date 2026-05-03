@@ -1,8 +1,4 @@
-import asyncio
-from collections.abc import AsyncIterator
-
-from fastapi import APIRouter, Depends, Request, Response, status
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 
 from gamehost_node.core.auth import require_api_key
 from gamehost_node.domain.containers import ContainerService
@@ -10,13 +6,17 @@ from gamehost_node.schemas.containers import (
     ContainerDetailOut,
     ContainerOut,
     CreateContainerIn,
+    LogsTailOut,
 )
 
 router = APIRouter(dependencies=[Depends(require_api_key)])
 
 
 def _service(request: Request) -> ContainerService:
-    return ContainerService(request.app.state.docker_facade)
+    return ContainerService(
+        request.app.state.docker_facade,
+        getattr(request.app.state, "log_publisher", None),
+    )
 
 
 @router.post("", response_model=ContainerOut, status_code=status.HTTP_201_CREATED)
@@ -62,15 +62,11 @@ async def delete_container(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/{container_id}/logs/stream")
-async def stream_logs(
-    container_id: str, svc: ContainerService = Depends(_service)
-) -> StreamingResponse:
-    async def event_stream() -> AsyncIterator[bytes]:
-        try:
-            async for line in svc.stream_logs(container_id):
-                yield f"data: {line.rstrip()}\n\n".encode()
-        except asyncio.CancelledError:
-            return
-
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+@router.get("/{container_id}/logs", response_model=LogsTailOut)
+async def tail_container_logs(
+    container_id: str,
+    tail: int = Query(default=200, ge=1, le=10000),
+    svc: ContainerService = Depends(_service),
+) -> LogsTailOut:
+    lines = await svc.tail_logs(container_id, tail)
+    return LogsTailOut(lines=lines)
