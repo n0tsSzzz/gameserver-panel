@@ -70,6 +70,28 @@ class NodeAgentClient:
             raise NodeAgentHTTPError(r.status_code, r.text)
         return dict(r.json())
 
+    async def backup(self, *, container_id: str, volume_name: str, s3_key: str) -> dict[str, Any]:
+        r = await self._retry(
+            "POST",
+            f"/api/v1/containers/{container_id}/backup",
+            json={"volumeName": volume_name, "s3Key": s3_key},
+            timeout=httpx.Timeout(connect=10.0, read=600.0, write=600.0, pool=10.0),
+        )
+        if r.status_code != 200:
+            raise NodeAgentHTTPError(r.status_code, r.text)
+        return dict(r.json())
+
+    async def restore(self, *, container_id: str, volume_name: str, s3_key: str) -> dict[str, Any]:
+        r = await self._retry(
+            "POST",
+            f"/api/v1/containers/{container_id}/restore",
+            json={"volumeName": volume_name, "s3Key": s3_key},
+            timeout=httpx.Timeout(connect=10.0, read=600.0, write=600.0, pool=10.0),
+        )
+        if r.status_code != 200:
+            raise NodeAgentHTTPError(r.status_code, r.text)
+        return dict(r.json())
+
     async def delete_container(self, container_id: str) -> None:
         r = await self._retry("DELETE", f"/api/v1/containers/{container_id}")
         if r.status_code == 404:

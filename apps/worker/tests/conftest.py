@@ -54,7 +54,7 @@ async def fixtures(session: AsyncSession) -> dict[str, object]:
     # truncate before each test
     await session.execute(
         text(
-            "TRUNCATE audit_log, tasks, servers, refresh_tokens, "
+            "TRUNCATE backups, audit_log, tasks, servers, refresh_tokens, "
             "nodes, game_templates, users RESTART IDENTITY CASCADE"
         )
     )

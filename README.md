@@ -53,6 +53,38 @@ curl localhost:8000/healthz   # {"status":"ok"}
 curl localhost:8000/readyz    # {"status":"ready"} если Postgres доступен
 ```
 
+## Stage 7: backups (MinIO + tar volume)
+
+Резервные копии данных сервера (named volume `gh-{server_id}-data`) → MinIO.
+Архитектура: API → ARQ → worker → node-agent → ephemeral `busybox`-helper
+монтирует volume в `/data`, гонит `tar -cf - -C /data . | gzip` через stdout,
+node-agent стримит чанки в multipart upload MinIO. Restore — обратный поток
+(`tar -xzf -` со stdin).
+
+```bash
+# 1. создать бэкап (operator+)
+curl -X POST ".../api/v1/servers/$SID/backups" -H "authorization: Bearer $T"
+# → 202 {"backupId":"...","taskId":"..."}
+
+# 2. дождаться status=available
+curl ".../api/v1/backups/$BID" -H "authorization: Bearer $T"
+
+# 3. остановить сервер и восстановить (owner-only)
+curl -X POST ".../api/v1/servers/$SID/stop"   -H "authorization: Bearer $T"
+curl -X POST ".../api/v1/backups/$BID/restore" -H "authorization: Bearer $T"
+```
+
+RBAC: GET = viewer+, POST backup = operator+, POST restore = **owner-only** и
+требует `server.status == 'stopped'`.
+
+Конфиг node-agent: `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`,
+`S3_BUCKET=gamehost-backups`, `S3_REGION`. Bucket создаётся автоматически на
+старте агента.
+
+**Brownfield-нюанс:** сервера, созданные до миграции `0005`, не имеют named
+volume `gh-{id}-data` — для них backup упадёт. Пересоздайте сервер через `POST
+/api/v1/servers`, чтобы worker сделал provision уже с volume.
+
 ## Stage 6: members & roles
 
 Владелец приглашает друзей по email-bound токену. Роли: `viewer` (только

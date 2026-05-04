@@ -114,3 +114,21 @@ class NotServerMember(DomainError):
     code = "not_server_member"
     status_code = 404
     title = "User is not a member of this server"
+
+
+class BackupNotFound(DomainError):
+    code = "backup_not_found"
+    status_code = 404
+    title = "Backup not found"
+
+
+class BackupNotReady(DomainError):
+    code = "backup_not_ready"
+    status_code = 409
+    title = "Backup is not available"
+
+
+class RestoreNotAllowed(DomainError):
+    code = "restore_not_allowed"
+    status_code = 409
+    title = "Server must be stopped to restore a backup"
