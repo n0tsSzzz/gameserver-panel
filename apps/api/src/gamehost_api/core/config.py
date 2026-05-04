@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     redis_url: str = Field(default="redis://localhost:6379", alias="REDIS_URL")
     node_agent_timeout_s: float = Field(default=10.0, alias="NODE_AGENT_TIMEOUT_S")
     log_stream_token_ttl_s: int = Field(default=60, alias="LOG_STREAM_TOKEN_TTL_S")
+    api_public_url: str = Field(default="http://localhost:8000", alias="API_PUBLIC_URL")
+    invite_ttl_days: int = Field(default=7, alias="INVITE_TTL_DAYS")
 
 
 @lru_cache(maxsize=1)

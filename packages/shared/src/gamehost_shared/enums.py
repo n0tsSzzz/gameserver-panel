@@ -34,3 +34,9 @@ class TaskStatus(StrEnum):
     RUNNING = "running"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
+
+
+class ServerRole(StrEnum):
+    OWNER = "owner"
+    OPERATOR = "operator"
+    VIEWER = "viewer"
