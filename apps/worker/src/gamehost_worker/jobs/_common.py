@@ -22,7 +22,7 @@ def build_create_spec(server: Server, template: GameTemplate) -> dict[str, Any]:
         "image": template.docker_image,
         "env": {k: str(v) for k, v in env.items()},
         "ports": ports,
-        "volumes": [],
+        "volumes": [{"name": f"gh-{server.id}-data", "mountPath": "/data", "readOnly": False}],
         "resources": {
             "cpuCores": float(res.get("cpuCores", 1.0)),
             "memMb": int(res.get("memMb", 1024)),

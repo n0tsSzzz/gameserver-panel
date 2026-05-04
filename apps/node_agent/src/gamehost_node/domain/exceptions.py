@@ -24,3 +24,15 @@ class DockerUnavailable(NodeAgentError):
     code = "docker_unavailable"
     status_code = 503
     title = "Docker daemon unavailable"
+
+
+class S3Unavailable(NodeAgentError):
+    code = "s3_unavailable"
+    status_code = 503
+    title = "S3 backend unavailable"
+
+
+class VolumeNotFound(NodeAgentError):
+    code = "volume_not_found"
+    status_code = 404
+    title = "Volume not found"

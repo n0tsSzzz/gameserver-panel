@@ -13,7 +13,8 @@ class Task(Base, TimestampMixin):
     __tablename__ = "tasks"
     __table_args__ = (
         CheckConstraint(
-            "kind IN ('provision','start','stop','restart','delete')", name="ck_tasks_kind"
+            "kind IN ('provision','start','stop','restart','delete','backup','restore')",
+            name="ck_tasks_kind",
         ),
         CheckConstraint(
             "status IN ('pending','running','succeeded','failed')", name="ck_tasks_status"

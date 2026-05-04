@@ -10,6 +10,7 @@ dependencies = [
     "docker>=7,<8",
     "structlog>=24,<26",
     "redis>=5,<6",
+    "aioboto3>=13,<15",
     "gamehost-shared",
 ]
 

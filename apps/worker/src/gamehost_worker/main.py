@@ -9,7 +9,15 @@ from sqlalchemy.ext.asyncio import (
 
 from gamehost_worker.core.config import get_settings
 from gamehost_worker.core.logging import configure_logging
-from gamehost_worker.jobs import delete, provision, restart, start, stop
+from gamehost_worker.jobs import (
+    backup_server,
+    delete,
+    provision,
+    restart,
+    restore_backup,
+    start,
+    stop,
+)
 
 
 async def _on_startup(ctx: dict[str, Any]) -> None:
@@ -29,7 +37,7 @@ async def _on_shutdown(ctx: dict[str, Any]) -> None:
 
 class WorkerSettings:
     redis_settings = RedisSettings.from_dsn(get_settings().redis_url)
-    functions = [provision, start, stop, restart, delete]
+    functions = [provision, start, stop, restart, delete, backup_server, restore_backup]
     on_startup = _on_startup
     on_shutdown = _on_shutdown
     keep_result = 600

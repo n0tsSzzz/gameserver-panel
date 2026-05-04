@@ -10,6 +10,7 @@ from gamehost_node.core.errors import register_exception_handlers
 from gamehost_node.core.logging import configure_logging
 from gamehost_node.docker_facade import DockerFacade
 from gamehost_node.log_publisher import LogPublisher
+from gamehost_node.s3_client import ensure_bucket
 
 
 @asynccontextmanager
@@ -23,6 +24,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             settings.redis_url, decode_responses=True
         )
         app.state.log_publisher = LogPublisher(redis_client, app.state.docker_facade)
+    import contextlib
+
+    with contextlib.suppress(Exception):
+        await ensure_bucket(settings.s3_bucket)
     try:
         yield
     finally:

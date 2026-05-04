@@ -27,6 +27,8 @@ class TaskKind(StrEnum):
     STOP = "stop"
     RESTART = "restart"
     DELETE = "delete"
+    BACKUP = "backup"
+    RESTORE = "restore"
 
 
 class TaskStatus(StrEnum):
