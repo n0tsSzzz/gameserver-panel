@@ -53,6 +53,33 @@ curl localhost:8000/healthz   # {"status":"ok"}
 curl localhost:8000/readyz    # {"status":"ready"} если Postgres доступен
 ```
 
+## Stage 6: members & roles
+
+Владелец приглашает друзей по email-bound токену. Роли: `viewer` (только
+чтение), `operator` (+ start/stop/restart), `owner` (полный контроль).
+
+```bash
+# 1. owner создаёт инвайт
+INV=$(curl -s -X POST ".../api/v1/servers/$SID/members/invite" \
+  -H "authorization: Bearer $OWNER_ACCESS" -H 'content-type: application/json' \
+  -d '{"email":"friend@x.test","role":"operator"}')
+TOKEN=$(echo $INV | jq -r .token)
+
+# 2. friend (залогинен под friend@x.test) принимает
+curl -X POST ".../api/v1/invites/$TOKEN/accept" \
+  -H "authorization: Bearer $FRIEND_ACCESS"
+
+# 3. friend может start/stop, но не patch/delete
+curl -X POST ".../api/v1/servers/$SID/start" -H "authorization: Bearer $FRIEND_ACCESS"
+```
+
+Email-bound: токен принимается только аккаунтом с тем же email, что в инвайте.
+Токен plaintext возвращается один раз; в БД — `sha256`. TTL 7 дней
+(`INVITE_TTL_DAYS`). Открытый инвайт уникален per `(server, email)`.
+
+RBAC: `require_server_role("viewer"|"operator"|"owner")` в роутерах + двойная
+проверка в сервисе.
+
 ## Stage 5: logs (tail + SSE через Redis pub/sub)
 
 Node-agent публикует строки `docker logs -f` в Redis pub/sub `logs:{cid}` для

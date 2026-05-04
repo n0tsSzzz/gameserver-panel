@@ -35,7 +35,7 @@ _LIFECYCLE_ALLOWED: dict[str, set[str]] = {
 }
 
 
-def _authorize(server: Server, user: User) -> None:
+def _authorize_owner(server: Server, user: User) -> None:
     if server.owner_id != user.id and user.role != "admin":
         raise ServerNotFound(str(server.id))
 
@@ -59,13 +59,20 @@ class ServerService:
     async def list_for(self, user: User) -> list[Server]:
         if user.role == "admin":
             return await self._servers.list_all()
-        return await self._servers.list_for_owner(user.id)
+        return await self._servers.list_for_user_or_member(user.id)
 
     async def get_for(self, server_id: uuid.UUID, user: User) -> Server:
+        """Owner-or-admin access (used by lifecycle methods that still call
+        get_for; the route-level dep upgrades this to viewer/operator where
+        appropriate)."""
         srv = await self._servers.get(server_id)
         if srv is None:
             raise ServerNotFound(str(server_id))
-        _authorize(srv, user)
+        from gamehost_api.domain.access import get_server_role_for
+
+        role = await get_server_role_for(self._s, server_id, user)
+        if role is None:
+            raise ServerNotFound(str(server_id))
         return srv
 
     async def create(self, payload: ServerCreateIn, owner: User) -> tuple[Server, Task]:
@@ -103,7 +110,13 @@ class ServerService:
     async def request_action(
         self, server_id: uuid.UUID, kind: str, actor: User
     ) -> tuple[Server, Task]:
+        from gamehost_api.domain.access import RANK, get_server_role_for
+        from gamehost_api.domain.exceptions import Forbidden
+
         srv = await self.get_for(server_id, actor)
+        role = await get_server_role_for(self._s, server_id, actor)
+        if role is None or RANK[role] < RANK["operator"]:
+            raise Forbidden("requires server role >= operator")
         allowed = _LIFECYCLE_ALLOWED.get(kind)
         if allowed is None:
             raise InvalidServerState(f"unknown action {kind}")
@@ -122,6 +135,7 @@ class ServerService:
 
     async def patch(self, server_id: uuid.UUID, payload: ServerPatchIn, actor: User) -> Server:
         srv = await self.get_for(server_id, actor)
+        _authorize_owner(srv, actor)
         if srv.status != "stopped":
             raise InvalidServerState("can only patch stopped server")
         fields: dict[str, object] = {}
@@ -135,6 +149,7 @@ class ServerService:
 
     async def delete(self, server_id: uuid.UUID, actor: User) -> tuple[Server, Task]:
         srv = await self.get_for(server_id, actor)
+        _authorize_owner(srv, actor)
         if srv.status == "deleting":
             raise InvalidServerState("server is already being deleted")
         await self._servers.set_status(srv.id, "deleting")

@@ -21,8 +21,9 @@ async def _clean_db(postgres_url: str) -> AsyncIterator[None]:
     async with engine.begin() as conn:
         await conn.execute(
             text(
-                "TRUNCATE audit_log, tasks, servers, refresh_tokens, "
-                "nodes, game_templates, users RESTART IDENTITY CASCADE"
+                "TRUNCATE server_invites, server_members, audit_log, tasks, "
+                "servers, refresh_tokens, nodes, game_templates, users "
+                "RESTART IDENTITY CASCADE"
             )
         )
     await engine.dispose()

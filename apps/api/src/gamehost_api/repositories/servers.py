@@ -40,6 +40,17 @@ class ServersRepository:
         stmt = select(Server).where(Server.owner_id == owner_id).order_by(Server.created_at.desc())
         return list((await self._s.execute(stmt)).scalars().all())
 
+    async def list_for_user_or_member(self, user_id: uuid.UUID) -> list[Server]:
+        from gamehost_api.db.models import ServerMember
+
+        member_subq = select(ServerMember.server_id).where(ServerMember.user_id == user_id)
+        stmt = (
+            select(Server)
+            .where((Server.owner_id == user_id) | Server.id.in_(member_subq))
+            .order_by(Server.created_at.desc())
+        )
+        return list((await self._s.execute(stmt)).scalars().all())
+
     async def list_all(self) -> list[Server]:
         stmt = select(Server).order_by(Server.created_at.desc())
         return list((await self._s.execute(stmt)).scalars().all())

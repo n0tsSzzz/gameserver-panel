@@ -84,3 +84,33 @@ class TaskNotFound(DomainError):
     code = "task_not_found"
     status_code = 404
     title = "Task not found"
+
+
+class MemberAlreadyExists(DomainError):
+    code = "member_exists"
+    status_code = 409
+    title = "User is already a member of this server"
+
+
+class InviteAlreadyExists(DomainError):
+    code = "invite_exists"
+    status_code = 409
+    title = "An open invite already exists for this email"
+
+
+class InviteNotFound(DomainError):
+    code = "invite_not_found"
+    status_code = 404
+    title = "Invite not found or no longer valid"
+
+
+class InviteEmailMismatch(DomainError):
+    code = "invite_email_mismatch"
+    status_code = 403
+    title = "Invite email does not match your account"
+
+
+class NotServerMember(DomainError):
+    code = "not_server_member"
+    status_code = 404
+    title = "User is not a member of this server"
